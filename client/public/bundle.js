@@ -80,7 +80,12 @@
 	      return _react2.default.createElement(
 	        'p',
 	        null,
-	        ' Hello React!'
+	        ' ',
+	        _react2.default.createElement(
+	          'a',
+	          { href: '/auth/facebook' },
+	          'Login with Facebook'
+	        )
 	      );
 	    }
 	  }]);
