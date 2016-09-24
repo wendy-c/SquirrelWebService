@@ -1,12 +1,13 @@
 var express = require('express');
-var passport = require('passport');
+var path = require('path');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var morgan = require('morgan');
 var session = require('express-session');
+var passport = require('passport');
 var FacebookStrategy = require('passport-facebook').Strategy;
-//var login = require('../../client/index');
-var path = require('path');
+var TwitterStrategy = require('passport-twitter').Strategy;
+var APIKeys = require('./config');
 
 var app = express();
 
@@ -27,8 +28,8 @@ app.use(passport.session());
 
 
 passport.use(new FacebookStrategy({
-  clientID: '1284182081633868',
-  clientSecret: '1b118f7cd28230cc8e1167c6c46a7b73',
+  clientID: APIKeys.keys.facebook.key,
+  clientSecret: APIKeys.keys.facebook.secret,
   callbackURL: 'http://localhost:3010/auth/facebook/callback'
 },
   function(accessToken, refreshToken, profile, done) {
@@ -41,6 +42,20 @@ passport.use(new FacebookStrategy({
   }
 ));
 
+passport.use(new TwitterStrategy({
+  consumerKey: APIKeys.keys.twitter.key,
+  consumerSecret: APIKeys.keys.twitter.secret,
+  callbackURL: 'http://localhost:3010/auth/twitter/callback'
+},
+function(token, tokenSecret, profile, done) {
+  User.findOrCreate({}, function(err, user) {
+    if (err) {
+      return done(err);
+    }
+    done(null, user);
+  });
+}));
+
 //user ID is serialized to the session, when a request of the same ID is received it will restore the session
 passport.serializeUser(function(user, done) {
   done(null, user.id);
@@ -52,7 +67,7 @@ passport.deserializeUser(function(id, done) {
   });
 });
 
-app.get('/')
+//app.get('/');
 
 app.post('/login', passport.authenticate('local'), function(req, res) {
   //if this function gets invoked, authentucation was successful
@@ -62,8 +77,16 @@ app.post('/login', passport.authenticate('local'), function(req, res) {
 
 app.get('/auth/facebook', passport.authenticate('facebook'));
 
-app.get('auth.facebook/callback',
+app.get('auth/facebook/callback',
   passport.authenticate('facebook', {
+    successRedirect: '/',
+    failureRedirect: '/login'
+  }));
+
+app.get('/auth/twitter', passport.authenticate('twitter'));
+
+app.get('auth/twitter/callback',
+  passport.authenticate('twitter', {
     successRedirect: '/',
     failureRedirect: '/login'
   }));
